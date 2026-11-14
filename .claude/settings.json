@@ -1,0 +1,1 @@
+{"permissions": {"allow": ["Bash(python:*)", "Bash(ls:*)", "Read(./**)", "Edit(./**)", "Write(./**)", "Read(~/.claude/projects/**)"]}}
