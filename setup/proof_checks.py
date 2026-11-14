@@ -9,6 +9,10 @@ Usage (after setup/download.py has written the data):
   d) both test strategies are deleted again and fable/ and opus/ are byte-identical
 Also lists each data file with its date range and candle count, and checks that no file
 outside hidden/ contains a candle from November 2025 or later.
+
+The expected numbers in (a) and (c) come from the original engine run on BYBIT candles.
+The data here is BINANCE (setup/download.py), whose prices differ slightly, so those
+numbers land close to the expected ones but only match exactly on Bybit data.
 """
 import filecmp
 import importlib.util

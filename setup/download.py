@@ -1,35 +1,34 @@
-"""Download Bybit BTCUSDT perpetual 4-hour candles and hide the exam year.
+"""Download Binance BTCUSDT perpetual 4-hour candles and hide the exam year.
 
 Usage (run from anywhere):
     python setup/download.py
 
 What it does:
-  1. Pages through Bybit v5 /market/kline (category=linear, interval=240, 1000 per call)
-     from the candle opening 2020-04-01 00:00 UTC up to and including the candle
+  1. Downloads Binance USD-M futures BTCUSDT 4h candles from Binance's public data archive
+     (data.binance.vision: one zip per month, plus one daily zip for the final candle),
+     verifying each zip against Binance's published SHA-256 checksum.
+     Range: the candle opening 2020-04-01 00:00 UTC up to and including the candle
      opening 2026-11-01 00:00 UTC (14,431 candles).
   2. Checks there are no gaps and no duplicates.
   3. Writes  fable/data/BTCUSDT_4h_insample.csv  (ts before 2025-11-01, 12,240 candles)
      and     hidden/BTCUSDT_4h_full.csv          (all 14,431 candles).
      If opus/ already exists (it is a copy of fable/), its in-sample file is written too.
 
-Nothing raw is saved to disk: candles are held in memory and only the files above are written.
-Bybit refuses its API to some countries (HTTP 403); run this from a location Bybit serves.
+Nothing raw is saved to disk: the zips are read in memory and only the files above are written.
 """
-import json
+import hashlib
+import io
 import os
-import sys
 import time
 import urllib.error
-import urllib.parse
 import urllib.request
+import zipfile
 
 import pandas as pd
 
-URL = "https://api.bybit.com/v5/market/kline"
+BASE = "https://data.binance.vision/data/futures/um"
 SYMBOL = "BTCUSDT"
-INTERVAL_MIN = 240
-STEP_MS = INTERVAL_MIN * 60 * 1000
-LIMIT = 1000
+INTERVAL = "4h"
 
 FIRST = pd.Timestamp("2020-04-01 00:00", tz="UTC")
 LAST = pd.Timestamp("2026-11-01 00:00", tz="UTC")
@@ -42,53 +41,48 @@ INSAMPLE_NAME = "BTCUSDT_4h_insample.csv"
 FULL_PATH = os.path.join(ROOT, "hidden", "BTCUSDT_4h_full.csv")
 
 
-def to_ms(ts):
-    return int(ts.timestamp() * 1000)
-
-
-def fetch_page(start_ms, end_ms):
-    """One API call: candles with start_ms <= open time <= end_ms (at most LIMIT)."""
-    query = urllib.parse.urlencode({
-        "category": "linear", "symbol": SYMBOL, "interval": INTERVAL_MIN,
-        "start": start_ms, "end": end_ms, "limit": LIMIT,
-    })
-    req = urllib.request.Request(f"{URL}?{query}", headers={"User-Agent": "python-urllib"})
+def get(url):
+    req = urllib.request.Request(url, headers={"User-Agent": "python-urllib"})
     for attempt in range(5):
         try:
-            with urllib.request.urlopen(req, timeout=30) as resp:
-                body = json.load(resp)
-            if body.get("retCode") != 0:
-                raise RuntimeError(f"Bybit error {body.get('retCode')}: {body.get('retMsg')}")
-            return body["result"]["list"]
-        except urllib.error.HTTPError as e:
-            if e.code == 403:
-                sys.exit("Bybit refused the request (HTTP 403): its API is not available from this "
-                         "location. Run this script from a location Bybit serves.")
+            with urllib.request.urlopen(req, timeout=60) as resp:
+                return resp.read()
+        except (urllib.error.URLError, TimeoutError) as e:
             last_error = e
-        except (urllib.error.URLError, TimeoutError, RuntimeError) as e:
-            last_error = e
-        time.sleep(2 ** attempt)
-    raise RuntimeError(f"giving up after 5 attempts: {last_error}")
+            time.sleep(2 ** attempt)
+    raise RuntimeError(f"giving up on {url} after 5 attempts: {last_error}")
+
+
+def fetch_zip(kind, period):
+    """kind is 'monthly' (period '2020-04') or 'daily' (period '2026-11-01'). Returns candle rows."""
+    name = f"{SYMBOL}-{INTERVAL}-{period}.zip"
+    url = f"{BASE}/{kind}/klines/{SYMBOL}/{INTERVAL}/{name}"
+    blob = get(url)
+    expected_sha = get(url + ".CHECKSUM").decode().split()[0]
+    if hashlib.sha256(blob).hexdigest() != expected_sha:
+        raise RuntimeError(f"checksum mismatch for {name}")
+    with zipfile.ZipFile(io.BytesIO(blob)) as z:
+        with z.open(z.namelist()[0]) as f:
+            raw = pd.read_csv(f, header=None, dtype=str)
+    # Binance row: open_time, open, high, low, close, volume, close_time, ... (some files have a header row)
+    raw = raw[raw[0].str.isdigit()].iloc[:, :6]
+    raw.columns = ["ts", "open", "high", "low", "close", "volume"]
+    return raw
 
 
 def download():
-    rows = []
-    cursor, end = to_ms(FIRST), to_ms(LAST)
-    while cursor <= end:
-        page_end = min(cursor + (LIMIT - 1) * STEP_MS, end)
-        page = fetch_page(cursor, page_end)
-        if not page:
-            raise RuntimeError(f"empty page starting at {pd.to_datetime(cursor, unit='ms', utc=True)}")
-        rows.extend(page)
-        print(f"  {len(rows):>6} candles", end="\r", flush=True)
-        cursor = page_end + STEP_MS
-        time.sleep(0.1)
+    parts = []
+    months = pd.period_range(FIRST, LAST - pd.Timedelta(days=1), freq="M")
+    for i, month in enumerate(months, 1):
+        parts.append(fetch_zip("monthly", str(month)))
+        print(f"  {i}/{len(months)} months", end="\r", flush=True)
     print()
-    # Bybit row: [startTime, open, high, low, close, volume, turnover], newest first within a page
-    df = pd.DataFrame([r[:6] for r in rows], columns=["ts", "open", "high", "low", "close", "volume"])
+    parts.append(fetch_zip("daily", LAST.strftime("%Y-%m-%d")))  # the final candle, 2026-11-01 00:00
+    df = pd.concat(parts, ignore_index=True)
     df["ts"] = pd.to_datetime(df["ts"].astype("int64"), unit="ms", utc=True)
     for col in ["open", "high", "low", "close", "volume"]:
         df[col] = df[col].astype(float)
+    df = df[(df["ts"] >= FIRST) & (df["ts"] <= LAST)]
     return df.sort_values("ts", kind="stable").reset_index(drop=True)
 
 
@@ -97,7 +91,7 @@ def check(df):
     dupes = int(df["ts"].duplicated().sum())
     if dupes:
         raise SystemExit(f"CHECK FAILED: {dupes} duplicate candles")
-    expected = pd.date_range(FIRST, LAST, freq=f"{INTERVAL_MIN}min")
+    expected = pd.date_range(FIRST, LAST, freq="4h")
     missing = expected.difference(pd.DatetimeIndex(df["ts"]))
     if len(missing):
         raise SystemExit(f"CHECK FAILED: {len(missing)} missing candles, first gap at {missing[0]}")
@@ -118,7 +112,7 @@ def write(df, path):
 
 
 def main():
-    print("Downloading Bybit BTCUSDT perpetual 4h candles ...")
+    print("Downloading Binance BTCUSDT perpetual 4h candles ...")
     df = download()
     print("Checking ...")
     check(df)
