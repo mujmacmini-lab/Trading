@@ -1,9 +1,9 @@
-"""The exam: score both AIs' strategies on the hidden period.
+"""The exam: score Fable's strategies on the hidden period.
 
 Usage (from the project root):
     python exam/run_exam.py
 
-Reads   fable/, opus/ (never written to) and hidden/BTCUSDT_4h_full.csv
+Reads   fable/ (never written to) and hidden/BTCUSDT_4h_full.csv
 Writes  exam/out/  (tables, charts, summary.json)  and  exam/RESULTS.md
 
 If an AI's folder has no strategies/s*.py but a snapshot of its submission exists in
@@ -28,7 +28,7 @@ import charts
 import engine as E
 import report
 
-AIS = {"fable": {"label": "Fable", "color": "#F59E0B"}, "opus": {"label": "Opus", "color": "#8B5CF6"}}
+AIS = {"fable": {"label": "Fable", "color": "#F59E0B"}}   # Fable only: the Opus build was dropped from the exam
 
 
 def submission_dir(ai):
@@ -112,6 +112,7 @@ def main():
         info["test5"] = {"passed": int((scored["luck_pct"] >= 95).sum()), "of": int(len(scored)),
                          "champion_pct": float(crow["luck_pct"]), "median_pct": float(scored["luck_pct"].median())}
         info["should_have_picked"] = E.should_have_picked(table)
+        info["basket"], results[ai]["basket_net"] = E.test_basket(bt, runs, full)
         t1, t2, t3, t4, t5 = info["test1"], info["test2"], info["test3"], info["test4"], info["test5"]
         info["verdicts"] = {   # pass rules, fixed before any strategy was scored
             "test1": bool(t1["champ_hid_return_pct"] > 0 and t1["champ_hid_return_pct"] > t1["buy_hold_pct"]),

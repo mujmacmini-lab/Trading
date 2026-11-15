@@ -4,11 +4,11 @@ import os
 HERE = os.path.dirname(os.path.abspath(__file__))
 
 TESTS = [
-    ("test1", "1. New data", "the champion made money in the hidden year and beat simply holding bitcoin"),
-    ("test2", "2. Tweak the settings", "every version with a setting nudged 20% up or down still made money"),
-    ("test3", "3. Higher fees", "the champion still made money with trading costs doubled"),
-    ("test4", "4. Worst case", "fewer than 1 in 4 reshuffles of its trades ended in a loss"),
-    ("test5", "5. Luck check", "the champion beat at least 95% of random look-alikes"),
+    ("test1", "1. New data", "made money in the hidden year and beat simply holding bitcoin"),
+    ("test2", "2. Tweak the settings", "still made money with every setting nudged 20% up or down"),
+    ("test3", "3. Higher fees", "still made money with trading costs doubled"),
+    ("test4", "4. Worst case", "lost money in fewer than 1 in 4 reshuffles of its results"),
+    ("test5", "5. Luck check", "beat at least 95% of randomly timed look-alikes"),
 ]
 
 
@@ -20,99 +20,95 @@ def verdict(ok):
     return "PASS" if ok else "FAIL"
 
 
-def scoreboard(summary):
-    ais = summary["ais"]
-    lines = ["| Test | " + " | ".join(a["label"] for a in ais.values()) + " | Pass means |",
-             "|---|" + "---|" * len(ais) + "---|"]
+def final_verdict(a):
+    """One-line result for a single AI, from its champion and its basket."""
+    c, b = sum(a["verdicts"].values()), sum(a["basket"]["verdicts"].values())
+    made_money = a["test1"]["champ_hid_return_pct"] > 0 and a["basket"]["hidden"]["net_return_pct"] > 0
+    luck_ok = a["verdicts"]["test5"] or a["basket"]["verdicts"]["test5"]
+    if made_money and luck_ok and b >= 4:
+        return "PROVEN ON THIS YEAR", "the strategies made money and beat the luck bar"
+    if made_money and b >= 4:
+        return "PROMISING, NOT PROVEN", ("the strategies made money on a year they were not built on and the group survived "
+                                         "the stress tests, but nothing clears the bar that separates skill from luck")
+    if made_money:
+        return "INCONCLUSIVE", "the strategies made money but did not survive the stress tests"
+    return "FAILED", "the strategies lost money on the hidden year"
+
+
+def scoreboard(a):
+    lines = [f"| Test | Champion {a['champion']} | All {a['basket']['n']} as one basket | Pass means it... |", "|---|---|---|---|"]
     for key, title, rule in TESTS:
-        cells = []
-        for a in ais.values():
-            cells.append(f"**{verdict(a['verdicts'][key])}**" if "verdicts" in a else "not submitted")
-        lines.append(f"| {title} | " + " | ".join(cells) + f" | {rule} |")
-    totals = [f"**{sum(a['verdicts'].values())} of 5**" if "verdicts" in a else "-" for a in ais.values()]
-    lines.append("| **Tests passed** | " + " | ".join(totals) + " | |")
+        lines.append(f"| {title} | **{verdict(a['verdicts'][key])}** | **{verdict(a['basket']['verdicts'][key])}** | {rule} |")
+    lines.append(f"| **Tests passed** | **{sum(a['verdicts'].values())} of 5** | **{sum(a['basket']['verdicts'].values())} of 5** | |")
     return "\n".join(lines)
 
 
-def headline(summary):
-    ais = summary["ais"]
-    done = [a for a in ais.values() if "verdicts" in a]
-    missing = [a for a in ais.values() if "verdicts" not in a]
-    out = []
-    if missing and done:
-        out.append(f"**There is no head-to-head winner, because only {done[0]['label']} handed in strategies.** "
-                   f"{missing[0]['label']}'s folder is empty: {missing[0]['source']}. "
-                   f"So this is {done[0]['label']} against the exam, not against {missing[0]['label']}.")
-    elif len(done) == 2:
-        a, b = done
-        sa, sb = sum(a["verdicts"].values()), sum(b["verdicts"].values())
-        if sa != sb:
-            w, l = (a, b) if sa > sb else (b, a)
-            out.append(f"**{w['label']} won, {max(sa, sb)} tests to {min(sa, sb)}.**")
-        else:
-            ra, rb = a["test1"]["champ_hid_return_pct"], b["test1"]["champ_hid_return_pct"]
-            w = a if ra >= rb else b
-            out.append(f"**Tied on tests ({sa} each); {w['label']}'s champion made more in the hidden year "
-                       f"({pct(max(ra, rb))} vs {pct(min(ra, rb))}).**")
-    else:
-        out.append("**Nobody handed in strategies, so there is nothing to score.**")
-    for a in done:
-        t1, t5, n = a["test1"], a["test5"], sum(a["verdicts"].values())
-        out.append(
-            f"{a['label']}'s champion, **{a['champion']} ({a['champion_name']})**, turned $10,000 into "
-            f"**${10000 * (1 + t1['champ_hid_return_pct'] / 100):,.0f}** over the hidden year ({pct(t1['champ_hid_return_pct'])}) "
-            f"while simply holding bitcoin returned {pct(t1['buy_hold_pct'])}. It passed **{n} of the 5 tests**. "
-            f"Across all {t1['scored']} of {a['label']}'s strategies, {t1['profitable']} made money and "
-            f"{t1['beat_buy_hold']} did better than holding bitcoin.")
-        if t5["champion_pct"] < 95:
-            out.append(
-                f"The honest catch is the luck check: the champion beat {t5['champion_pct']:.0f}% of random look-alikes, "
-                f"short of the 95% needed to rule out luck, and only {t5['passed']} of {t5['of']} strategies cleared that bar.")
-    return "\n\n".join(out)
+def result_section(a):
+    t1, t5, b = a["test1"], a["test5"], a["basket"]
+    label, why = final_verdict(a)
+    return "\n\n".join([
+        f"**{label}.** {a['label']}'s {t1['scored']} strategies were built on bitcoin prices up to October 2025 and then run, "
+        f"untouched, on the following year. In short: {why}.",
+        f"- **The champion {a['label']} named in advance, {a['champion']} ({a['champion_name']}),** turned $10,000 into "
+        f"${10000 * (1 + t1['champ_hid_return_pct'] / 100):,.0f} ({pct(t1['champ_hid_return_pct'])}) while holding bitcoin turned "
+        f"$10,000 into ${10000 * (1 + t1['buy_hold_pct'] / 100):,.0f} ({pct(t1['buy_hold_pct'])}). It passed "
+        f"{sum(a['verdicts'].values())} of 5 tests and finished {t1['champ_hid_rank']} of {t1['scored']} among its own siblings.\n"
+        f"- **All {b['n']} strategies held together as one basket** made {pct(b['hidden']['net_return_pct'])} with a worst dip of "
+        f"{pct(b['hidden']['max_drawdown_pct'])}, and passed {sum(b['verdicts'].values())} of 5 tests. Its return per unit of risk "
+        f"(Sharpe) was {b['hidden']['sharpe']:.2f} in the hidden year against {b['before']['sharpe']:.2f} before it: the group behaved "
+        f"on new data the way it behaved on old data.\n"
+        f"- **Neither clears the luck bar.** Against randomly timed look-alikes the champion beat {t5['champion_pct']:.0f}% and the "
+        f"basket beat {b['luck_pct']:.0f}%; 95% is the line. One year is too short to tell skill from a good year.\n"
+        f"- **Picking a single winner in advance did not work.** {t1['profitable']} of {t1['scored']} strategies made money, but the "
+        f"ranking on old data said nothing about the ranking on new data (link {t1['spearman']:+.2f}, where 0 is no link).",
+    ])
 
 
-def picks(summary):
-    lines = []
-    for a in summary["ais"].values():
-        b = a.get("should_have_picked")
-        if not b:
-            lines.append(f"- **{a['label']}**: nothing submitted, so there is nothing to pick from.")
-            continue
-        t1 = a["test1"]
-        lines.append(
-            f"- **{a['label']}** should have picked **{b['id']} ({b['name']})**: {pct(b['hid_return_pct'])} in the hidden year "
-            f"with a worst dip of {pct(b['hid_max_dd_pct'])}, against {pct(t1['champ_hid_return_pct'])} for its actual champion "
-            f"{a['champion']}. Before the hidden year that strategy sat at rank {b['is_rank']} of {b['of']}, and the champion at "
-            f"rank {t1['champ_is_rank']} - the past ranking pointed the wrong way (rank link between past and hidden "
-            f"scores: {t1['spearman']:+.2f}, where 0 means no link).")
-    return "\n".join(lines)
+def forward_section(a):
+    b, s, t1 = a["basket"], a["should_have_picked"], a["test1"]
+    return "\n".join([
+        f"**The basket of all {b['n']} strategies, not any single one.**", "",
+        f"- **Not {s['id']} ({s['name']}),** the best performer at {pct(s['hid_return_pct'])}. It was ranked {s['is_rank']} of "
+        f"{s['of']} beforehand; choosing it now is picking the lottery winner after the draw.",
+        f"- **Not the champion {a['champion']} on its own.** It was the honest advance pick, but it failed three tests.",
+        f"- **The basket** needs no picking, so hindsight cannot flatter it. It is one bet, not {b['n']}: the strategies move "
+        f"together (typical correlation {b['median_pair_corr_hidden']:.2f}).", "",
+        "How to take it forward:", "",
+        "1. Freeze the 100 files as they are. No re-tuning on the hidden year.",
+        "2. Trade it on paper for 3 to 6 months on live 4-hour candles, as one position equal to the average of the 100 signals. "
+        "Only data from today on is truly unseen by the model.",
+        "3. Add funding costs. The backtester charges fees and slippage but not the funding payments of perpetual futures.",
+        "4. Fix the stop rule now, for example: drop it if the forward Sharpe is below 0.5 or the dip passes 25%.",
+        "5. Consider small real money only after that.",
+    ])
 
 
 def caveats(summary):
     out = []
     problems = [c for c in summary["cheat_checks"] if c["verdict"] != "CLEAN"]
     if problems:
-        out.append(f"- **{len(problems)} of {len(summary['cheat_checks'])} cheat checks could not be passed**, all for the same two "
-                   "reasons: one AI handed in nothing, and the session logs the spec asks for are not on this machine. "
-                   "A substitute audit of the build session found no access to the hidden file (details in Step 1).")
-    if os.path.exists(os.path.join(HERE, "manual_audit.md")):
-        out.append("- **The hidden year is not fully unknown to the AI.** The model's training data runs into 2026, and its own "
-                   "FINAL.md says it has a rough idea how bitcoin moved after October 2025. It never saw the hidden candles, "
-                   "but that background knowledge cannot be ruled out as an influence.")
+        out.append(f"- **{len(problems)} of {len(summary['cheat_checks'])} cheat checks could not be passed:** the session logs the spec "
+                   "asks for are not on this machine. A substitute audit of the build session found no access to the hidden file "
+                   "(details in Step 1).")
+    out.append("- **The hidden year is not fully unknown to the AI.** The model's training data runs into 2026, and its own FINAL.md "
+               "says it has a rough idea how bitcoin moved after October 2025. It never saw the hidden candles, but that background "
+               "knowledge cannot be ruled out as an influence.")
+    out.append("- **The basket tests were added after the champion's results were known.** The five tests were specified for the "
+               "champion. The basket versions ask the same five questions of the whole set and use the same pass lines, but they "
+               "were not fixed in advance.")
+    out.append("- **A falling year flatters strategies that can bet on falling prices.** Bitcoin lost 29% in the hidden year. "
+               "The luck check is the test that corrects for this, and it is the one that was not passed.")
     bad = [p for p in summary["proof"] if p["result"] != "MATCH"]
     if bad:
         out.append(f"- **The proof check matches on {len(summary['proof']) - len(bad)} of {len(summary['proof'])} numbers.** The rest "
-                   "differ most likely because the reference numbers come from a slightly different price feed, not because of the engine "
-                   "(details in Step 4).")
+                   "differ most likely because the reference numbers come from a slightly different price feed, not because of the "
+                   "engine (details in Step 4).")
     return "\n".join(out)
 
 
-def ai_section(a):
-    if "verdicts" not in a:
-        return f"### {a['label']}\n\nNot submitted: {a['source']}. Nothing could be scored.\n"
+def champion_section(a):
     t1, t2, t3, t4, t5, v = a["test1"], a["test2"], a["test3"], a["test4"], a["test5"], a["verdicts"]
-    s = [f"### {a['label']}", "",
-         f"Scored: {a['source']}. {a['scored']} of {a['strategies']} strategies passed the entry gate "
+    s = [f"Scored: {a['source']}. {a['scored']} of {a['strategies']} strategies passed the entry gate "
          f"(no look-ahead, at least 30 trades on the data the AI was given) and were scored. "
          f"Champion named in FINAL.md: **{a['champion']} - {a['champion_name']}**, settings `{a['champion_params']}`.", ""]
 
@@ -153,31 +149,60 @@ def ai_section(a):
           "direction, same length, but entered at random moments.", "",
           "| | |", "|---|---|",
           f"| Champion beat | {t5['champion_pct']:.1f}% of its twins (95% needed) |",
-          f"| Strategies that beat 95% of their twins | {t5['passed']} of {t5['of']} |",
+          f"| Strategies that beat 95% of their twins | {t5['passed']} of {t5['of']} (about 5 would by chance alone) |",
           f"| Typical (median) strategy beat | {t5['median_pct']:.1f}% of its twins |", ""]
+    return "\n".join(s)
 
-    b = a["should_have_picked"]
-    if b:
-        same = b["id"] == a["champion"]
-        s += ["**The one it should have picked**", "",
-              f"{a['label']}'s best strategy in the hidden year (by Sharpe, at least 5 trades) was "
-              f"**{b['id']} - {b['name']}** ({b['family']}): {pct(b['hid_return_pct'])}, Sharpe {b['hid_sharpe']:.2f}, "
-              f"worst dip {pct(b['hid_max_dd_pct'])}, {b['hid_trades']} trades. "
-              + ("That is the champion it actually picked." if same else
-                 f"On the data the AI could see it ranked only **{b['is_rank']} of {b['of']}** "
-                 f"(Sharpe {b['is_sharpe']:.2f}), so nothing in the past pointed to it."), ""]
 
-    s += ["Top 10 in the hidden year:", "",
-          "| Hidden rank | Strategy | Family | Rank before | Hidden return | Hidden Sharpe | Worst dip | Trades | Beat twins |",
-          "|---|---|---|---|---|---|---|---|---|"]
+def basket_section(a):
+    b = a["basket"]
+    v, w = b["verdicts"], b["worst_case"]
+    s = [f"All {b['n']} strategies held at the same time with equal money in each, rebalanced every candle. In practice that is one "
+         f"position equal to the average of the {b['n']} signals.", "",
+         "| | Before the hidden year | Hidden year |", "|---|---|---|",
+         f"| Return | {pct(b['before']['net_return_pct'])} ({pct(b['before']['cagr_pct'])} a year) | {pct(b['hidden']['net_return_pct'])} |",
+         f"| Sharpe | {b['before']['sharpe']:.2f} | {b['hidden']['sharpe']:.2f} |",
+         f"| Worst dip | {pct(b['before']['max_drawdown_pct'])} | {pct(b['hidden']['max_drawdown_pct'])} |",
+         f"| Buy & hold bitcoin | {pct(b['before']['buy_hold_pct'])} | {pct(b['hidden']['buy_hold_pct'])} |", "",
+         f"**Test 1, new data: {verdict(v['test1'])}** - {pct(b['hidden']['net_return_pct'])} against {pct(b['hidden']['buy_hold_pct'])} for holding bitcoin.", "",
+         f"**Test 2, tweak the settings: {verdict(v['test2'])}** - every numeric setting of every strategy moved at once.", "",
+         "| All settings | Hidden return | Hidden Sharpe |", "|---|---|---|"]
+    for t in b["tweaks"]:
+        s.append(f"| x{t['mult']} | {pct(t['hid_return_pct'])} | {t['hid_sharpe']:.2f} |")
+    s += ["", f"**Test 3, higher fees: {verdict(v['test3'])}**", "",
+          "| Trading costs | Hidden return |", "|---|---|",
+          f"| None (x0) | {pct(b['fees']['0'])} |", f"| Normal (x1) | {pct(b['fees']['1'])} |",
+          f"| Double (x2) | {pct(b['fees']['2'])} |", f"| Triple (x3) | {pct(b['fees']['3'])} |", "",
+          f"**Test 4, worst case: {verdict(v['test4'])}** - a basket has no single trades, so its hidden year was cut into "
+          f"{w['weeks']} weeks and the weeks were reshuffled 1,000 times.", "",
+          "| | |", "|---|---|",
+          f"| Reshuffles that ended in a loss | {w['pct_below_zero']:.1f}% |",
+          f"| Typical (median) worst dip | {pct(w['median_max_dd_pct'])} |",
+          f"| Worst dip in the unluckiest 5% | {pct(w['p5_max_dd_pct'])} |", "",
+          f"**Test 5, luck check: {verdict(v['test5'])}** - the basket's own positions were slid to 1,000 random other moments of "
+          "the hidden year. That keeps how big, how long and how often it trades, and only breaks its timing against the market.", "",
+          "| | |", "|---|---|",
+          f"| Basket beat | {b['luck_pct']:.1f}% of its randomly timed twins (95% needed) |",
+          f"| Typical twin made | {pct(b['twin_median_return_pct'])} |", ""]
+    return "\n".join(s)
+
+
+def picked_section(a):
+    b, t1 = a["should_have_picked"], a["test1"]
+    s = [f"{a['label']}'s best strategy in the hidden year (by Sharpe, at least 5 trades) was "
+         f"**{b['id']} - {b['name']}** ({b['family']}): {pct(b['hid_return_pct'])}, Sharpe {b['hid_sharpe']:.2f}, "
+         f"worst dip {pct(b['hid_max_dd_pct'])}, {b['hid_trades']} trades. On the data the AI could see it ranked only "
+         f"**{b['is_rank']} of {b['of']}** (Sharpe {b['is_sharpe']:.2f}), while the champion it did pick ranked "
+         f"{t1['champ_is_rank']}. Nothing in the past pointed to it.", "",
+         "Top 10 in the hidden year:", "",
+         "| Hidden rank | Strategy | Family | Rank before | Hidden return | Hidden Sharpe | Worst dip | Trades | Beat twins |",
+         "|---|---|---|---|---|---|---|---|---|"]
     for i, r in enumerate(a["hidden_top10"], 1):
-        star = " (champion)" if r["id"] == a["champion"] else ""
-        s.append(f"| {i} | {r['id']} {r['name']}{star} | {r['family']} | {int(r['is_rank'])} | {pct(r['hid_net_return_pct'])} | "
+        s.append(f"| {i} | {r['id']} {r['name']} | {r['family']} | {int(r['is_rank'])} | {pct(r['hid_net_return_pct'])} | "
                  f"{r['hid_sharpe']:.2f} | {pct(r['hid_max_drawdown_pct'])} | {int(r['hid_trades'])} | {r['luck_pct']:.0f}% |")
     s += ["", "By family:", "", "| Family | Strategies | Made money | Median hidden return | Median hidden Sharpe |", "|---|---|---|---|---|"]
     for r in sorted(a["by_family"], key=lambda r: -r["median_hid_sharpe"]):
         s.append(f"| {r['family']} | {r['n']} | {r['profitable']} | {pct(r['median_hid_return'])} | {r['median_hid_sharpe']:.2f} |")
-    s.append("")
     return "\n".join(s)
 
 
@@ -220,31 +245,32 @@ def proof_section(summary):
 
 
 def write(summary, path):
-    ais = summary["ais"]
+    a = next(x for x in summary["ais"].values() if "verdicts" in x)
     charts = summary.get("charts", {})
     parts = [
-        "# Exam results: 100 strategies per AI on a year they never saw",
+        f"# Exam result: {a['label']}'s {a['scored']} strategies on a year they were not built on",
         "",
         f"Hidden period: {summary['hidden_from'][:10]} to {summary['hidden_to'][:10]} "
         f"({summary['hidden_bars']:,} four-hour candles). Every number below comes from `python exam/run_exam.py`, "
-        "using the same engine the AIs were given (`fable/backtest.py`): same fees, same next-candle rule.",
+        "using the same engine the AI was given (`fable/backtest.py`): same fees, same next-candle rule.",
         "",
-        "## Who won, and why", "", headline(summary), "",
-        "## Scoreboard", "", scoreboard(summary), "",
-        "The pass rules were written down before any strategy was scored. Tests 2 to 5 are about each AI's champion; "
-        "the detail sections show the numbers for all of its strategies.", "",
-        "## The strategy each AI should have picked", "", picks(summary), "",
-        "## Read this before trusting the scoreboard", "", caveats(summary), "",
+        "## The result", "", result_section(a), "",
+        "## Scoreboard", "", scoreboard(a), "",
+        "The champion's pass lines were written down before any strategy was scored. The basket column asks the same five "
+        "questions of all strategies held together.", "",
+        "## What to push forward", "", forward_section(a), "",
+        "## Read this before trusting the result", "", caveats(summary), "",
         "## Step 1: did anybody cheat?", "", cheat_section(summary), "",
-        "## The five tests in detail", "",
+        f"## The champion in detail: {a['champion']}", "", champion_section(a),
+        f"## The basket in detail: all {a['basket']['n']} strategies together", "", basket_section(a),
+        "## The one it should have picked", "", picked_section(a), "",
+        "## Step 4: is the engine right? (proof check)", "", proof_section(summary), "", "## Charts", "",
     ]
-    parts += [ai_section(a) for a in ais.values()]
-    parts += ["## Step 4: is the engine right? (proof check)", "", proof_section(summary), "", "## Charts", ""]
-    for name in ("spaghetti_fable.png", "spaghetti_opus.png", "full_history.png"):
-        parts += [f"![{name}](out/{name})", ""] if name in charts else [f"`{name}`: not drawn - no strategies were submitted.", ""]
+    for name in sorted(charts):
+        parts += [f"![{name}](out/{name})", ""]
     parts += ["## Files", "",
-              "- `exam/out/scores_<ai>.csv`: every strategy with its before and hidden-year numbers",
-              "- `exam/out/test2_tweaks_<ai>.csv`: the tweaked versions of the champion",
+              "- `exam/out/scores_fable.csv`: every strategy with its before and hidden-year numbers",
+              "- `exam/out/test2_tweaks_fable.csv`: the tweaked versions of the champion",
               "- `exam/out/summary.json`: every number in this report",
               "- `exam/out/log_flags.json`: flagged tool calls from the session logs",
               "- `exam/out/submissions/`: the byte-for-byte snapshot that was scored, with its git commit", ""]
@@ -253,14 +279,12 @@ def write(summary, path):
 
 
 def console(summary):
-    print("\nSCOREBOARD")
+    a = next(x for x in summary["ais"].values() if "verdicts" in x)
+    label, why = final_verdict(a)
+    print(f"\nRESULT: {label} - {why}")
+    print(f"  {'':<24} champion {a['champion']:<6} basket of {a['basket']['n']}")
     for key, title, _ in TESTS:
-        row = "  ".join(f"{a['label']}: {verdict(a['verdicts'][key]) if 'verdicts' in a else 'not submitted'}"
-                        for a in summary["ais"].values())
-        print(f"  {title:<24} {row}")
-    for a in summary["ais"].values():
-        if "verdicts" in a:
-            t1 = a["test1"]
-            print(f"  {a['label']} champion {a['champion']}: hidden {pct(t1['champ_hid_return_pct'])} "
-                  f"(buy & hold {pct(t1['buy_hold_pct'])}), rank {t1['champ_hid_rank']}/{t1['scored']}, "
-                  f"luck {a['test5']['champion_pct']}%")
+        print(f"  {title:<24} {verdict(a['verdicts'][key]):<15} {verdict(a['basket']['verdicts'][key])}")
+    t1, b = a["test1"], a["basket"]
+    print(f"  hidden return            {pct(t1['champ_hid_return_pct']):<15} {pct(b['hidden']['net_return_pct'])}   (buy & hold {pct(t1['buy_hold_pct'])})")
+    print(f"  beat random twins        {a['test5']['champion_pct']:<15} {b['luck_pct']}   (95 needed)")

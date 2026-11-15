@@ -31,6 +31,11 @@ strong { font-weight: 600; }
 .stat .v { font: 700 clamp(1.7rem, 4vw, 2.4rem)/1.05 var(--display); font-variant-numeric: tabular-nums; }
 .stat .k { font-size: .86rem; color: var(--muted); line-height: 1.4; }
 .sw { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 7px; }
+.sw.basket { background: var(--text); }
+.result { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; font: 700 clamp(1.3rem, 3.6vw, 1.9rem)/1.2 var(--display); letter-spacing: .01em; }
+.result .eyebrow { font-family: var(--body); font-weight: 500; }
+.hbar.basket { background: var(--text); }
+ol.steps { margin: 0; padding-left: 1.3em; display: flex; flex-direction: column; gap: 8px; max-width: 72ch; }
 .sw.fable { background: var(--fable); } .sw.opus { background: var(--opus); } .sw.btc { background: var(--btc); }
 .scroll { overflow-x: auto; }
 table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; }
@@ -126,26 +131,27 @@ code { font: .88em ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--
   <section>
     <p class="eyebrow">BTCUSDT perpetual &middot; 4-hour candles &middot; hidden year 2025-11-01 to 2026-11-01</p>
     <h1>Hidden-Year Exam</h1>
-    <p class="lead">Two AIs were each asked for 100 bitcoin trading strategies. Only Fable handed any in, so there is no head-to-head winner. Fable's champion made money in a year when bitcoin lost 29%, but it passed only 2 of the 5 tests.</p>
+    <p class="result"><span class="eyebrow">Result</span>Promising, not proven</p>
+    <p class="lead">Fable built 100 bitcoin trading strategies on prices up to October 2025. Here they are run, untouched, on the following year. In short: the strategies made money on a year they were not built on and the group survived the stress tests, but nothing clears the bar that separates skill from luck.</p>
     <div class="stats">
-      <div class="stat"><span class="v">$11,046</span><span class="k"><i class="sw fable"></i>Fable's champion s020, from $10,000 (+10.46%)</span></div>
+      <div class="stat"><span class="v">$11,046</span><span class="k"><i class="sw fable"></i>The champion Fable named in advance, s020, from $10,000 (+10.46%)</span></div>
       <div class="stat"><span class="v">$7,056</span><span class="k"><i class="sw btc"></i>Just holding bitcoin, from $10,000 (−29.44%)</span></div>
-      <div class="stat"><span class="v">91 / 100</span><span class="k">Fable strategies that made money in the hidden year</span></div>
-      <div class="stat"><span class="v">7 / 100</span><span class="k">Fable strategies that beat 95% of random look-alikes</span></div>
+      <div class="stat"><span class="v">$12,679</span><span class="k"><i class="sw basket"></i>All 100 strategies as one basket, from $10,000 (+26.79%)</span></div>
+      <div class="stat"><span class="v">85%</span><span class="k">Random look-alikes the basket beat. 95% is needed to rule out luck</span></div>
     </div>
   </section>
 </header>
 
 <section>
   <h2>Scoreboard</h2>
-  <div class="scroll"><table class="board"><thead><tr><th scope="col">Test</th><th scope="col"><i class="sw fable"></i>Fable</th><th scope="col"><i class="sw opus"></i>Opus</th></tr></thead><tbody><tr><th scope="row">New data<small>The champion made money in the hidden year and beat simply holding bitcoin.</small></th><td><span class="pill pass"><span aria-hidden="true">✓</span> Pass</span></td><td><span class="pill none">not submitted</span></td></tr><tr><th scope="row">Tweak the settings<small>Every version with a setting nudged 20% up or down still made money.</small></th><td><span class="pill fail"><span aria-hidden="true">✕</span> Fail</span></td><td><span class="pill none">not submitted</span></td></tr><tr><th scope="row">Higher fees<small>The champion still made money with trading costs doubled.</small></th><td><span class="pill pass"><span aria-hidden="true">✓</span> Pass</span></td><td><span class="pill none">not submitted</span></td></tr><tr><th scope="row">Worst case<small>Fewer than 1 in 4 reshuffles of its trades ended in a loss.</small></th><td><span class="pill fail"><span aria-hidden="true">✕</span> Fail</span></td><td><span class="pill none">not submitted</span></td></tr><tr><th scope="row">Luck check<small>The champion beat at least 95% of random look-alikes.</small></th><td><span class="pill fail"><span aria-hidden="true">✕</span> Fail</span></td><td><span class="pill none">not submitted</span></td></tr><tr class="total"><th scope="row">Tests passed</th><td><strong>2 of 5</strong></td><td>–</td></tr></tbody></table></div>
-  <p class="muted">The pass rules were fixed before any strategy was scored. Opus has no column of results because its folder is empty: no strategies were built in any session or branch of this repository.</p>
+  <div class="scroll"><table class="board"><thead><tr><th scope="col">Test</th><th scope="col"><i class="sw fable"></i>Champion s020</th><th scope="col"><i class="sw basket"></i>All 100 as one basket</th></tr></thead><tbody><tr><th scope="row">New data<small>It made money in the hidden year and beat simply holding bitcoin.</small></th><td><span class="pill pass"><span aria-hidden="true">✓</span> Pass</span></td><td><span class="pill pass"><span aria-hidden="true">✓</span> Pass</span></td></tr><tr><th scope="row">Tweak the settings<small>It still made money with every setting nudged 20% up or down.</small></th><td><span class="pill fail"><span aria-hidden="true">✕</span> Fail</span></td><td><span class="pill pass"><span aria-hidden="true">✓</span> Pass</span></td></tr><tr><th scope="row">Higher fees<small>It still made money with trading costs doubled.</small></th><td><span class="pill pass"><span aria-hidden="true">✓</span> Pass</span></td><td><span class="pill pass"><span aria-hidden="true">✓</span> Pass</span></td></tr><tr><th scope="row">Worst case<small>It lost money in fewer than 1 in 4 reshuffles of its results.</small></th><td><span class="pill fail"><span aria-hidden="true">✕</span> Fail</span></td><td><span class="pill pass"><span aria-hidden="true">✓</span> Pass</span></td></tr><tr><th scope="row">Luck check<small>It beat at least 95% of randomly timed look-alikes.</small></th><td><span class="pill fail"><span aria-hidden="true">✕</span> Fail</span></td><td><span class="pill fail"><span aria-hidden="true">✕</span> Fail</span></td></tr><tr class="total"><th scope="row">Tests passed</th><td><strong>2 of 5</strong></td><td><strong>4 of 5</strong></td></tr></tbody></table></div>
+  <p class="muted">The champion's pass lines were fixed before any strategy was scored. The basket column asks the same five questions of all 100 strategies held together; those versions were added after the champion's results were known.</p>
 </section>
 
 <section>
   <h2>All 100 strategies in the hidden year</h2>
-  <figure><img src="spaghetti_fable.png" alt="Equity of each of Fable's 100 strategies over the hidden year from $10,000, with the champion highlighted and bitcoin buy and hold as a dashed grey line that ends near $7,056.">
-  <figcaption>Each thin line is one strategy starting with $10,000. Thick line: the champion. Dashed grey: holding bitcoin.</figcaption></figure>
+  <figure><img src="spaghetti_fable.png" alt="Equity of each of Fable's 100 strategies over the hidden year from $10,000, with the champion in amber, the equal-weight basket in white and bitcoin buy and hold as a dashed grey line that ends near $7,056.">
+  <figcaption>Each thin line is one strategy starting with $10,000. Thick amber: the champion. White: all 100 as one basket. Dashed grey: holding bitcoin.</figcaption></figure>
   <p>91 of 100 strategies ended above $10,000 and 99 beat holding bitcoin. Most of these rules can bet on falling prices, and the hidden year was a falling market, so this result says less than it seems to. The luck check further down is the fairer test.</p>
 </section>
 
@@ -196,6 +202,58 @@ code { font: .88em ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--
 </section>
 
 <section>
+  <h2>All 100 strategies as one basket</h2>
+  <p>Hold every strategy at once with equal money in each. In practice that is one position equal to the average of the 100 signals. No picking is involved, so hindsight cannot flatter it.</p>
+  <div class="duo">
+    <div><span class="eyebrow">Before the hidden year</span><span class="v">Sharpe 1.00</span>
+      <small>+34.6% a year, worst dip −33.8%.</small></div>
+    <div><span class="eyebrow">Hidden year</span><span class="v">Sharpe 1.04</span>
+      <small>+26.8%, worst dip −18.5%. The group behaved on new data the way it did on old data.</small></div>
+  </div>
+  <div class="two">
+    <div class="block">
+      <div class="verdict"><h3>Tweak the settings</h3><span class="pill pass"><span aria-hidden="true">✓</span> Pass</span></div>
+      <p class="muted">Every numeric setting of every strategy moved 20% down, then 20% up, all at once.</p>
+      <div class="hbars"><div class="hrow"><span class="hl">All settings <span>×0.8</span></span><div class="track" tabindex="0" data-tip="All settings ×0.8|+15.87% in the hidden year"><i class="zero" style="left:20.00%"></i><i class="ref" style="left:73.58%"></i><i class="hbar" style="left:20.00%;width:31.74%"></i></div><span class="hv">+15.87%</span></div><div class="hrow"><span class="hl">All settings <span>×1.2</span></span><div class="track" tabindex="0" data-tip="All settings ×1.2|+23.69% in the hidden year"><i class="zero" style="left:20.00%"></i><i class="ref" style="left:73.58%"></i><i class="hbar" style="left:20.00%;width:47.38%"></i></div><span class="hv">+23.69%</span></div></div>
+      <div class="legend"><span><i class="lz"></i>basket as submitted (+26.8%)</span></div>
+    </div>
+    <div class="block">
+      <div class="verdict"><h3>Higher fees</h3><span class="pill pass"><span aria-hidden="true">✓</span> Pass</span></div>
+      <p class="muted">Trading costs removed, doubled and tripled.</p>
+      <div class="hbars"><div class="hrow"><span class="hl">No fees</span><div class="track" tabindex="0" data-tip="No fees|+33.56% in the hidden year"><i class="zero" style="left:20.00%"></i><i class="hbar" style="left:20.00%;width:67.12%"></i></div><span class="hv">+33.56%</span></div><div class="hrow"><span class="hl">Normal fees</span><div class="track" tabindex="0" data-tip="Normal fees|+26.79% in the hidden year"><i class="zero" style="left:20.00%"></i><i class="hbar" style="left:20.00%;width:53.58%"></i></div><span class="hv">+26.79%</span></div><div class="hrow"><span class="hl">Double fees</span><div class="track" tabindex="0" data-tip="Double fees|+20.36% in the hidden year"><i class="zero" style="left:20.00%"></i><i class="hbar" style="left:20.00%;width:40.72%"></i></div><span class="hv">+20.36%</span></div><div class="hrow"><span class="hl">Triple fees</span><div class="track" tabindex="0" data-tip="Triple fees|+14.26% in the hidden year"><i class="zero" style="left:20.00%"></i><i class="hbar" style="left:20.00%;width:28.52%"></i></div><span class="hv">+14.26%</span></div></div>
+    </div>
+    <div class="block">
+      <div class="verdict"><h3>Worst case</h3><span class="pill pass"><span aria-hidden="true">✓</span> Pass</span></div>
+      <p class="muted">The basket's hidden year cut into 53 weeks, reshuffled 1,000 times.</p>
+      <div class="scroll"><table><tbody>
+        <tr><th scope="row">Reshuffles that lost money</th><td>16.6%</td></tr>
+        <tr><th scope="row">Typical worst dip</th><td>−14.6%</td></tr>
+        <tr><th scope="row">Worst dip in the unluckiest 5%</th><td>−27.6%</td></tr>
+      </tbody></table></div>
+    </div>
+    <div class="block">
+      <div class="verdict"><h3>Luck check</h3><span class="pill fail"><span aria-hidden="true">✕</span> Fail</span></div>
+      <p class="muted">The basket's own positions slid to 1,000 random other moments of the year. Same size, same rhythm, different timing.</p>
+      <div class="hbars"><div class="hrow"><span class="hl">Basket of 100</span><div class="track" tabindex="0" data-tip="Basket of 100|beat 85.3% of its randomly timed twins"><i class="ref" style="left:95%"></i><i class="hbar basket" style="left:0;width:85.3%"></i></div><span class="hv">85%</span></div><div class="hrow"><span class="hl">Champion s020</span><div class="track" tabindex="0" data-tip="Champion s020|beat 70.3% of its randomly timed twins"><i class="ref" style="left:95%"></i><i class="hbar" style="left:0;width:70.3%"></i></div><span class="hv">70%</span></div></div>
+      <div class="legend"><span><i class="lz"></i>95% needed to rule out luck</span></div>
+    </div>
+  </div>
+  <p>The basket beat 85% of its randomly timed twins, which typically made −13.5%. That points to real timing value, but it is short of the 95% line. The 100 strategies also move together (typical correlation 0.61), so this is one bet, not 100.</p>
+</section>
+
+<section>
+  <h2>What to push forward</h2>
+  <p><strong>The basket of all 100, not a single strategy.</strong> s023 made +95.1% but ranked 85 of 100 beforehand, so choosing it now is picking the lottery winner after the draw. The champion s020 was the honest advance pick and failed three tests.</p>
+  <ol class="steps">
+    <li>Freeze the 100 files as they are. No re-tuning on the hidden year.</li>
+    <li>Trade the basket on paper for 3 to 6 months on live 4-hour candles. Only data from today on is truly unseen by the model.</li>
+    <li>Add funding costs. The backtester charges fees and slippage but not the funding payments of perpetual futures.</li>
+    <li>Fix the stop rule now, for example: drop it if the forward Sharpe is below 0.5 or the dip passes 25%.</li>
+    <li>Consider small real money only after that.</li>
+  </ol>
+</section>
+
+<section>
   <h2>Best ten in the hidden year</h2>
   <div class="scroll"><table><thead><tr><th>#</th><th>Strategy</th><th>Rank before</th><th>Return</th><th>Sharpe</th><th>Worst dip</th><th>Beat twins</th></tr></thead><tbody><tr><td>1</td><th scope="row">s023 MACD line and histogram agreement</th><td>85</td><td>+95.1%</td><td>2.29</td><td>−16.5%</td><td>98%</td></tr><tr><td>2</td><th scope="row">s012 Hull MA slope</th><td>80</td><td>+122.2%</td><td>2.12</td><td>−18.9%</td><td>96%</td></tr><tr><td>3</td><th scope="row">s053 Williams %R pullback in trend</th><td>80</td><td>+44.2%</td><td>2.07</td><td>−9.2%</td><td>99%</td></tr><tr><td>4</td><th scope="row">s059 Shock continuation</th><td>93</td><td>+41.2%</td><td>1.97</td><td>−9.9%</td><td>99%</td></tr><tr><td>5</td><th scope="row">s077 Choppiness-index regime</th><td>80</td><td>+59.1%</td><td>1.72</td><td>−23.0%</td><td>97%</td></tr><tr><td>6</td><th scope="row">s033 Donchian 20d/10d</th><td>80</td><td>+67.1%</td><td>1.59</td><td>−20.8%</td><td>94%</td></tr><tr><td>7</td><th scope="row">s058 Trend-channel lower-half entry</th><td>85</td><td>+40.8%</td><td>1.51</td><td>−13.0%</td><td>98%</td></tr><tr><td>8</td><th scope="row">s051 Bollinger pullback in trend</th><td>66</td><td>+26.1%</td><td>1.47</td><td>−12.2%</td><td>96%</td></tr><tr><td>9</td><th scope="row">s069 Expansion-confirmed breakout</th><td>5</td><td>+37.8%</td><td>1.39</td><td>−17.0%</td><td>91%</td></tr><tr><td>10</td><th scope="row">s026 Long-window RSI regime</th><td>79</td><td>+54.3%</td><td>1.39</td><td>−23.5%</td><td>87%</td></tr></tbody></table></div>
   <h3>By family</h3>
@@ -205,13 +263,13 @@ code { font: .88em ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--
 
 <section>
   <h2>Since April 2020</h2>
-  <figure><img src="full_history.png" alt="Fable's champion and bitcoin buy and hold from April 2020 on a log scale, both starting at $10,000, with the hidden year shaded purple.">
-  <figcaption>$10,000 start, log scale. The shaded band is the hidden year.</figcaption></figure>
+  <figure><img src="full_history.png" alt="Fable's champion, the basket of all 100 strategies and bitcoin buy and hold from April 2020 on a log scale, all starting at $10,000, with the hidden year shaded purple.">
+  <figcaption>$10,000 start, log scale. Amber: the champion. White: the basket. The shaded band is the hidden year.</figcaption></figure>
 </section>
 
 <section>
   <h2>Did anybody cheat?</h2>
-  <ul class="checks"><li><span class="pill pass"><span aria-hidden="true">✓</span> Clean</span><div><strong>fable/backtest.py and opus/backtest.py are byte-identical</strong><small>identical</small></div></li><li><span class="pill pass"><span aria-hidden="true">✓</span> Clean</span><div><strong>in-sample CSVs are byte-identical (12,240 candles, last 2025-10-31 20:00)</strong><small>identical; 12,240 candles; last candle 2025-10-31 20:00:00+00:00</small></div></li><li><span class="pill pass"><span aria-hidden="true">✓</span> Clean</span><div><strong>Fable: no strategy mentions &quot;hidden&quot;, opens files or uses the network</strong><small>100 files scanned, 0 flagged</small></div></li><li><span class="pill pass"><span aria-hidden="true">✓</span> Clean</span><div><strong>Fable: snapshot&#x27;s backtest.py and in-sample CSV equal the ones in fable/</strong><small>identical</small></div></li><li><span class="pill fail"><span aria-hidden="true">!</span> Problem</span><div><strong>Fable: session logs show no peeking</strong><small>log folder does not exist on this machine - the session cannot be verified here</small></div></li><li><span class="pill fail"><span aria-hidden="true">!</span> Problem</span><div><strong>Opus: no strategy mentions &quot;hidden&quot;, opens files or uses the network</strong><small>no strategy files submitted - nothing to check</small></div></li><li><span class="pill fail"><span aria-hidden="true">!</span> Problem</span><div><strong>Opus: session logs show no peeking</strong><small>log folder does not exist on this machine - the session cannot be verified here</small></div></li></ul>
+  <ul class="checks"><li><span class="pill pass"><span aria-hidden="true">✓</span> Clean</span><div><strong>fable/backtest.py is byte-identical to the untouched reference copy in opus/</strong><small>identical</small></div></li><li><span class="pill pass"><span aria-hidden="true">✓</span> Clean</span><div><strong>in-sample CSV is byte-identical to the reference copy (12,240 candles, last 2025-10-31 20:00)</strong><small>identical; 12,240 candles; last candle 2025-10-31 20:00:00+00:00</small></div></li><li><span class="pill pass"><span aria-hidden="true">✓</span> Clean</span><div><strong>Fable: no strategy mentions &quot;hidden&quot;, opens files or uses the network</strong><small>100 files scanned, 0 flagged</small></div></li><li><span class="pill pass"><span aria-hidden="true">✓</span> Clean</span><div><strong>Fable: snapshot&#x27;s backtest.py and in-sample CSV equal the ones in fable/</strong><small>identical</small></div></li><li><span class="pill fail"><span aria-hidden="true">!</span> Problem</span><div><strong>Fable: session logs show no peeking</strong><small>log folder does not exist on this machine - the session cannot be verified here</small></div></li></ul>
   <p>The session logs the spec asks for are not on this machine, because Fable's strategies were built in a separate cloud session. As a substitute, all 38 tool calls of that session were read through the session history. What they show:</p>
   <ul class="notes">
     <li><strong>No access to the hidden file.</strong> No command or path touches <code>hidden/</code>, there are no web requests, no downloads and no dates after October 2025. The only price file read was the in-sample one.</li>

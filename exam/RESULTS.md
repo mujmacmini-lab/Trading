@@ -1,50 +1,62 @@
-# Exam results: 100 strategies per AI on a year they never saw
+# Exam result: Fable's 100 strategies on a year they were not built on
 
-Hidden period: 2025-11-01 to 2026-11-01 (2,191 four-hour candles). Every number below comes from `python exam/run_exam.py`, using the same engine the AIs were given (`fable/backtest.py`): same fees, same next-candle rule.
+Hidden period: 2025-11-01 to 2026-11-01 (2,191 four-hour candles). Every number below comes from `python exam/run_exam.py`, using the same engine the AI was given (`fable/backtest.py`): same fees, same next-candle rule.
 
-## Who won, and why
+## The result
 
-**There is no head-to-head winner, because only Fable handed in strategies.** Opus's folder is empty: opus/strategies/ is empty and no submission exists on any branch of the repository. So this is Fable against the exam, not against Opus.
+**PROMISING, NOT PROVEN.** Fable's 100 strategies were built on bitcoin prices up to October 2025 and then run, untouched, on the following year. In short: the strategies made money on a year they were not built on and the group survived the stress tests, but nothing clears the bar that separates skill from luck.
 
-Fable's champion, **s020 (Momentum vote 30/60/90/120d)**, turned $10,000 into **$11,046** over the hidden year (+10.46%) while simply holding bitcoin returned -29.44%. It passed **2 of the 5 tests**. Across all 100 of Fable's strategies, 91 made money and 99 did better than holding bitcoin.
-
-The honest catch is the luck check: the champion beat 70% of random look-alikes, short of the 95% needed to rule out luck, and only 7 of 100 strategies cleared that bar.
+- **The champion Fable named in advance, s020 (Momentum vote 30/60/90/120d),** turned $10,000 into $11,046 (+10.46%) while holding bitcoin turned $10,000 into $7,056 (-29.44%). It passed 2 of 5 tests and finished 75 of 100 among its own siblings.
+- **All 100 strategies held together as one basket** made +26.79% with a worst dip of -18.51%, and passed 4 of 5 tests. Its return per unit of risk (Sharpe) was 1.04 in the hidden year against 1.00 before it: the group behaved on new data the way it behaved on old data.
+- **Neither clears the luck bar.** Against randomly timed look-alikes the champion beat 70% and the basket beat 85%; 95% is the line. One year is too short to tell skill from a good year.
+- **Picking a single winner in advance did not work.** 91 of 100 strategies made money, but the ranking on old data said nothing about the ranking on new data (link -0.03, where 0 is no link).
 
 ## Scoreboard
 
-| Test | Fable | Opus | Pass means |
+| Test | Champion s020 | All 100 as one basket | Pass means it... |
 |---|---|---|---|
-| 1. New data | **PASS** | not submitted | the champion made money in the hidden year and beat simply holding bitcoin |
-| 2. Tweak the settings | **FAIL** | not submitted | every version with a setting nudged 20% up or down still made money |
-| 3. Higher fees | **PASS** | not submitted | the champion still made money with trading costs doubled |
-| 4. Worst case | **FAIL** | not submitted | fewer than 1 in 4 reshuffles of its trades ended in a loss |
-| 5. Luck check | **FAIL** | not submitted | the champion beat at least 95% of random look-alikes |
-| **Tests passed** | **2 of 5** | - | |
+| 1. New data | **PASS** | **PASS** | made money in the hidden year and beat simply holding bitcoin |
+| 2. Tweak the settings | **FAIL** | **PASS** | still made money with every setting nudged 20% up or down |
+| 3. Higher fees | **PASS** | **PASS** | still made money with trading costs doubled |
+| 4. Worst case | **FAIL** | **PASS** | lost money in fewer than 1 in 4 reshuffles of its results |
+| 5. Luck check | **FAIL** | **FAIL** | beat at least 95% of randomly timed look-alikes |
+| **Tests passed** | **2 of 5** | **4 of 5** | |
 
-The pass rules were written down before any strategy was scored. Tests 2 to 5 are about each AI's champion; the detail sections show the numbers for all of its strategies.
+The champion's pass lines were written down before any strategy was scored. The basket column asks the same five questions of all strategies held together.
 
-## The strategy each AI should have picked
+## What to push forward
 
-- **Fable** should have picked **s023 (MACD line and histogram agreement)**: +95.08% in the hidden year with a worst dip of -16.50%, against +10.46% for its actual champion s020. Before the hidden year that strategy sat at rank 85 of 100, and the champion at rank 9 - the past ranking pointed the wrong way (rank link between past and hidden scores: -0.03, where 0 means no link).
-- **Opus**: nothing submitted, so there is nothing to pick from.
+**The basket of all 100 strategies, not any single one.**
 
-## Read this before trusting the scoreboard
+- **Not s023 (MACD line and histogram agreement),** the best performer at +95.08%. It was ranked 85 of 100 beforehand; choosing it now is picking the lottery winner after the draw.
+- **Not the champion s020 on its own.** It was the honest advance pick, but it failed three tests.
+- **The basket** needs no picking, so hindsight cannot flatter it. It is one bet, not 100: the strategies move together (typical correlation 0.61).
 
-- **3 of 7 cheat checks could not be passed**, all for the same two reasons: one AI handed in nothing, and the session logs the spec asks for are not on this machine. A substitute audit of the build session found no access to the hidden file (details in Step 1).
+How to take it forward:
+
+1. Freeze the 100 files as they are. No re-tuning on the hidden year.
+2. Trade it on paper for 3 to 6 months on live 4-hour candles, as one position equal to the average of the 100 signals. Only data from today on is truly unseen by the model.
+3. Add funding costs. The backtester charges fees and slippage but not the funding payments of perpetual futures.
+4. Fix the stop rule now, for example: drop it if the forward Sharpe is below 0.5 or the dip passes 25%.
+5. Consider small real money only after that.
+
+## Read this before trusting the result
+
+- **1 of 5 cheat checks could not be passed:** the session logs the spec asks for are not on this machine. A substitute audit of the build session found no access to the hidden file (details in Step 1).
 - **The hidden year is not fully unknown to the AI.** The model's training data runs into 2026, and its own FINAL.md says it has a rough idea how bitcoin moved after October 2025. It never saw the hidden candles, but that background knowledge cannot be ruled out as an influence.
+- **The basket tests were added after the champion's results were known.** The five tests were specified for the champion. The basket versions ask the same five questions of the whole set and use the same pass lines, but they were not fixed in advance.
+- **A falling year flatters strategies that can bet on falling prices.** Bitcoin lost 29% in the hidden year. The luck check is the test that corrects for this, and it is the one that was not passed.
 - **The proof check matches on 2 of 5 numbers.** The rest differ most likely because the reference numbers come from a slightly different price feed, not because of the engine (details in Step 4).
 
 ## Step 1: did anybody cheat?
 
 | Check | Verdict | Detail |
 |---|---|---|
-| fable/backtest.py and opus/backtest.py are byte-identical | **CLEAN** | identical |
-| in-sample CSVs are byte-identical (12,240 candles, last 2025-10-31 20:00) | **CLEAN** | identical; 12,240 candles; last candle 2025-10-31 20:00:00+00:00 |
+| fable/backtest.py is byte-identical to the untouched reference copy in opus/ | **CLEAN** | identical |
+| in-sample CSV is byte-identical to the reference copy (12,240 candles, last 2025-10-31 20:00) | **CLEAN** | identical; 12,240 candles; last candle 2025-10-31 20:00:00+00:00 |
 | Fable: no strategy mentions "hidden", opens files or uses the network | **CLEAN** | 100 files scanned, 0 flagged |
 | Fable: snapshot's backtest.py and in-sample CSV equal the ones in fable/ | **CLEAN** | identical |
 | Fable: session logs show no peeking (~/.claude/projects/-home-user-Trading-fable) | **PROBLEM** | log folder does not exist on this machine - the session cannot be verified here |
-| Opus: no strategy mentions "hidden", opens files or uses the network | **PROBLEM** | no strategy files submitted - nothing to check |
-| Opus: session logs show no peeking (~/.claude/projects/-home-user-Trading-opus) | **PROBLEM** | log folder does not exist on this machine - the session cannot be verified here |
 
 **Extra audit, because the session logs the spec asks for are not on this machine.** The Fable strategies were
 built in a separate cloud session ("BTCUSDT 4h trading strategies", 14 Nov 2026, 21:03-21:24 UTC), so its log
@@ -75,9 +87,7 @@ Two more things a viewer should know:
    (`fable/research/build.py`, `fable/research/lab.py`) are still in `fable/` here because the exam is not allowed
    to edit that folder.
 
-## The five tests in detail
-
-### Fable
+## The champion in detail: s020
 
 Scored: snapshot of git commit ef6859a (exam/out/submissions/fable/), because fable/ here has no strategies. 100 of 100 strategies passed the entry gate (no look-ahead, at least 30 trades on the data the AI was given) and were scored. Champion named in FINAL.md: **s020 - Momentum vote 30/60/90/120d**, settings `{'n1': 180, 'n2': 360, 'n3': 540, 'n4': 720}`.
 
@@ -135,12 +145,56 @@ Each strategy's hidden-year trades were compared with 1,000 random twins: same n
 | | |
 |---|---|
 | Champion beat | 70.3% of its twins (95% needed) |
-| Strategies that beat 95% of their twins | 7 of 100 |
+| Strategies that beat 95% of their twins | 7 of 100 (about 5 would by chance alone) |
 | Typical (median) strategy beat | 77.8% of its twins |
 
-**The one it should have picked**
+## The basket in detail: all 100 strategies together
 
-Fable's best strategy in the hidden year (by Sharpe, at least 5 trades) was **s023 - MACD line and histogram agreement** (momentum): +95.08%, Sharpe 2.29, worst dip -16.50%, 21 trades. On the data the AI could see it ranked only **85 of 100** (Sharpe 0.53), so nothing in the past pointed to it.
+All 100 strategies held at the same time with equal money in each, rebalanced every candle. In practice that is one position equal to the average of the 100 signals.
+
+| | Before the hidden year | Hidden year |
+|---|---|---|
+| Return | +424.88% (+34.56% a year) | +26.79% |
+| Sharpe | 1.00 | 1.04 |
+| Worst dip | -33.84% | -18.51% |
+| Buy & hold bitcoin | +1,621.54% | -29.44% |
+
+**Test 1, new data: PASS** - +26.79% against -29.44% for holding bitcoin.
+
+**Test 2, tweak the settings: PASS** - every numeric setting of every strategy moved at once.
+
+| All settings | Hidden return | Hidden Sharpe |
+|---|---|---|
+| x0.8 | +15.87% | 0.71 |
+| x1.2 | +23.69% | 0.95 |
+
+**Test 3, higher fees: PASS**
+
+| Trading costs | Hidden return |
+|---|---|
+| None (x0) | +33.56% |
+| Normal (x1) | +26.79% |
+| Double (x2) | +20.36% |
+| Triple (x3) | +14.26% |
+
+**Test 4, worst case: PASS** - a basket has no single trades, so its hidden year was cut into 53 weeks and the weeks were reshuffled 1,000 times.
+
+| | |
+|---|---|
+| Reshuffles that ended in a loss | 16.6% |
+| Typical (median) worst dip | -14.64% |
+| Worst dip in the unluckiest 5% | -27.63% |
+
+**Test 5, luck check: FAIL** - the basket's own positions were slid to 1,000 random other moments of the hidden year. That keeps how big, how long and how often it trades, and only breaks its timing against the market.
+
+| | |
+|---|---|
+| Basket beat | 85.3% of its randomly timed twins (95% needed) |
+| Typical twin made | -13.47% |
+
+## The one it should have picked
+
+Fable's best strategy in the hidden year (by Sharpe, at least 5 trades) was **s023 - MACD line and histogram agreement** (momentum): +95.08%, Sharpe 2.29, worst dip -16.50%, 21 trades. On the data the AI could see it ranked only **85 of 100** (Sharpe 0.53), while the champion it did pick ranked 9. Nothing in the past pointed to it.
 
 Top 10 in the hidden year:
 
@@ -169,10 +223,6 @@ By family:
 | breakout | 16 | 15 | +20.99% | 0.82 |
 | volatility | 14 | 11 | +21.67% | 0.78 |
 
-### Opus
-
-Not submitted: opus/strategies/ is empty and no submission exists on any branch of the repository. Nothing could be scored.
-
 ## Step 4: is the engine right? (proof check)
 
 | Check | Expected | Got | Result |
@@ -193,16 +243,14 @@ The scores in this report are therefore right for the candles in this repository
 
 ## Charts
 
-![spaghetti_fable.png](out/spaghetti_fable.png)
-
-`spaghetti_opus.png`: not drawn - no strategies were submitted.
-
 ![full_history.png](out/full_history.png)
+
+![spaghetti_fable.png](out/spaghetti_fable.png)
 
 ## Files
 
-- `exam/out/scores_<ai>.csv`: every strategy with its before and hidden-year numbers
-- `exam/out/test2_tweaks_<ai>.csv`: the tweaked versions of the champion
+- `exam/out/scores_fable.csv`: every strategy with its before and hidden-year numbers
+- `exam/out/test2_tweaks_fable.csv`: the tweaked versions of the champion
 - `exam/out/summary.json`: every number in this report
 - `exam/out/log_flags.json`: flagged tool calls from the session logs
 - `exam/out/submissions/`: the byte-for-byte snapshot that was scored, with its git commit

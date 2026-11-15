@@ -43,13 +43,13 @@ def check_identical_engine(root):
     out = []
     a, b = os.path.join(root, "fable", "backtest.py"), os.path.join(root, "opus", "backtest.py")
     ok = same_bytes(a, b)
-    out.append(("fable/backtest.py and opus/backtest.py are byte-identical", "CLEAN" if ok else "PROBLEM",
+    out.append(("fable/backtest.py is byte-identical to the untouched reference copy in opus/", "CLEAN" if ok else "PROBLEM",
                 "identical" if ok else "the two engines differ"))
     a, b = (os.path.join(root, d, "data", "BTCUSDT_4h_insample.csv") for d in ("fable", "opus"))
     ok = same_bytes(a, b)
     ts = pd.to_datetime(pd.read_csv(a, usecols=["ts"])["ts"], utc=True)
     shape_ok = len(ts) == 12240 and str(ts.iloc[-1]) == "2025-10-31 20:00:00+00:00"
-    out.append(("in-sample CSVs are byte-identical (12,240 candles, last 2025-10-31 20:00)",
+    out.append(("in-sample CSV is byte-identical to the reference copy (12,240 candles, last 2025-10-31 20:00)",
                 "CLEAN" if ok and shape_ok else "PROBLEM",
                 f"{'identical' if ok else 'DIFFERENT'}; {len(ts):,} candles; last candle {ts.iloc[-1]}"))
     return out

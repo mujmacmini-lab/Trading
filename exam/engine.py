@@ -251,3 +251,101 @@ def proof_check(bt, full):
         rows.append((f"{label}: hidden trades", exp_tr, hid["trades"]))
     rows.append(("Buy & hold over the hidden period %", -29.44, bh))
     return [(what, exp, got, "MATCH" if float(exp) == float(got) else "NO MATCH") for what, exp, got in rows]
+
+
+# ---- the whole set as one equal-weight basket ---------------------------------------------------
+# Not part of the original five-test spec: the same five questions asked of all strategies held together.
+
+def basket_series(bt, runs, full, cost_mult=1.0):
+    """Equal-weight basket, rebalanced every bar: (net, average position, average cost)."""
+    r = full["close"].pct_change().fillna(0)
+    pos = pd.DataFrame({sid: runs[sid]["pos"] for sid in sorted(runs)})
+    turn = pos.diff().abs().fillna(pos.abs())
+    P = pos.mean(axis=1)
+    cost = turn.mean(axis=1) * bt.COST_PER_SIDE * cost_mult
+    return P * r - cost, P, cost
+
+
+def _hidden_stats(bt, net, P, close):
+    h = net.index >= CUT
+    empty = pd.DataFrame(columns=["entry", "exit", "side", "bars", "ret"])
+    ins = bt.metrics(net[~h], P[~h], empty, close[~h])
+    hid = bt.metrics(net[h], P[h], empty, close[h])
+    keep = ("net_return_pct", "cagr_pct", "sharpe", "max_drawdown_pct", "buy_hold_pct")
+    return {k: ins[k] for k in keep}, {k: hid[k] for k in keep}
+
+
+def test_basket(bt, runs, full, n_samples=1000, seed=42):
+    close = full["close"]
+    h = full.index >= CUT
+    net, P, cost = basket_series(bt, runs, full)
+    ins, hid = _hidden_stats(bt, net, P, close)
+    out = {"n": len(runs), "before": ins, "hidden": hid,
+           "avg_position_hidden": round(float(P[h].mean()), 2),
+           "median_pair_corr_hidden": None}
+    nets = pd.DataFrame({sid: runs[sid]["net"][h] for sid in sorted(runs)})
+    corr = nets.corr().to_numpy()
+    out["median_pair_corr_hidden"] = round(float(np.nanmedian(corr[np.triu_indices(len(corr), 1)])), 2)
+
+    # test 3 analogue: fees
+    out["fees"] = {}
+    for mult in (0, 1, 2, 3):
+        n_m, P_m, _ = basket_series(bt, runs, full, cost_mult=float(mult))
+        out["fees"][str(mult)] = _hidden_stats(bt, n_m, P_m, close)[1]["net_return_pct"]
+
+    # test 2 analogue: every numeric setting of every strategy moved 20% down, then 20% up, all at once
+    out["tweaks"] = []
+    for mult in (0.8, 1.2):
+        runs2, failed = {}, 0
+        for sid in sorted(runs):
+            _, params = bt.load_strategy(runs[sid]["path"])
+            over = {}
+            for k, v in params.items():
+                if isinstance(v, bool) or not isinstance(v, (int, float)):
+                    continue
+                new = int(round(v * mult)) if isinstance(v, int) else v * mult
+                if new != v:
+                    over[k] = new
+            try:
+                runs2[sid] = run(bt, runs[sid]["path"], full, overrides=over)
+            except Exception:
+                runs2[sid] = runs[sid]
+                failed += 1
+        n2, P2, _ = basket_series(bt, runs2, full)
+        hid2 = _hidden_stats(bt, n2, P2, close)[1]
+        out["tweaks"].append({"mult": mult, "hid_return_pct": hid2["net_return_pct"], "hid_sharpe": hid2["sharpe"],
+                              "kept_original": failed})
+
+    # test 4 analogue: the basket has no single trades, so its hidden year is cut into weeks (42 candles)
+    x = net[h].to_numpy()
+    weeks = np.array([np.prod(1 + x[i:i + 42]) - 1 for i in range(0, len(x), 42)])
+    rng = np.random.default_rng(seed)
+    finals, dds = [], []
+    for _ in range(n_samples):
+        eq = np.concatenate([[1.0], np.cumprod(1 + rng.choice(weeks, size=len(weeks), replace=True))])
+        finals.append(eq[-1] - 1)
+        dds.append((eq / np.maximum.accumulate(eq) - 1).min())
+    out["worst_case"] = {"weeks": int(len(weeks)), "pct_below_zero": round(float((np.array(finals) < 0).mean() * 100), 1),
+                         "median_max_dd_pct": round(float(np.median(dds) * 100), 2),
+                         "p5_max_dd_pct": round(float(np.percentile(dds, 5) * 100), 2)}
+
+    # test 5 analogue: the basket's own positions, slid to a random other moment of the hidden year.
+    # Sliding keeps how long, how big and how often it trades, and how the strategies move together;
+    # it only breaks the timing against the market.
+    r = close.pct_change().fillna(0)[h].to_numpy()
+    p, c = P[h].to_numpy(), cost[h].to_numpy()
+    real = float(np.log1p(p * r - c).sum())
+    rng = np.random.default_rng(seed)
+    shifts = rng.integers(1, len(r), size=n_samples)
+    twins = np.array([np.log1p(np.roll(p, s) * r - np.roll(c, s)).sum() for s in shifts])
+    out["luck_pct"] = round(float((real > twins).mean() * 100), 1)
+    out["twin_median_return_pct"] = round(float((np.exp(np.median(twins)) - 1) * 100), 2)
+
+    out["verdicts"] = {
+        "test1": bool(hid["net_return_pct"] > 0 and hid["net_return_pct"] > hid["buy_hold_pct"]),
+        "test2": bool(all(t["hid_return_pct"] > 0 for t in out["tweaks"])),
+        "test3": bool(out["fees"]["2"] > 0),
+        "test4": bool(out["worst_case"]["pct_below_zero"] < 25),
+        "test5": bool(out["luck_pct"] >= 95),
+    }
+    return out, net

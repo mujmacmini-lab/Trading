@@ -45,6 +45,9 @@ def spaghetti(ai, meta, res, full, out):
     if champ in res["runs"]:
         eq = START * (1 + res["runs"][champ]["net"][h]).cumprod()
         ax.plot(eq.index, eq.values, color=meta["color"], linewidth=2.8, label=f"Champion {champ}  \\${eq.iloc[-1]:,.0f}")
+    if res.get("basket_net") is not None:
+        eq = START * (1 + res["basket_net"][h]).cumprod()
+        ax.plot(eq.index, eq.values, color=FG, linewidth=2.2, label=f"All {len(res['runs'])} as one basket  \\${eq.iloc[-1]:,.0f}")
     ax.axhline(START, color=FG, linewidth=0.8, alpha=0.5)
     _style(ax, f"{meta['label']}: all {len(res['runs'])} strategies on the hidden year",
            f"\\$10,000 start, {close.index[0]:%d %b %Y} to {close.index[-1]:%d %b %Y}, fees included.  "
@@ -70,12 +73,15 @@ def full_history(results, full, ais, out):
         eq = START * (1 + res["runs"][res["champion"]]["net"]).cumprod()
         ax.plot(eq.index, eq.values, color=meta["color"], linewidth=2.2,
                 label=f"{meta['label']} champion {res['champion']}  \\${eq.iloc[-1]:,.0f}")
+        if res.get("basket_net") is not None:
+            eq = START * (1 + res["basket_net"]).cumprod()
+            ax.plot(eq.index, eq.values, color=FG, linewidth=1.6,
+                    label=f"{meta['label']}: all {len(res['runs'])} as one basket  \\${eq.iloc[-1]:,.0f}")
     ax.set_yscale("log")
     ax.set_yticks([10_000, 20_000, 50_000, 100_000, 200_000])
     missing = [m["label"] for a, m in ais.items() if a not in results]
-    _style(ax, "Champions vs bitcoin since April 2020",
-           "\\$10,000 start, log scale, fees included. Purple band = hidden year the AIs never saw."
-           + (f"  No champion from {', '.join(missing)}: nothing was submitted." if missing else ""))
+    _style(ax, "Champion and basket vs bitcoin since April 2020",
+           "\\$10,000 start, log scale, fees included. Purple band = hidden year the strategies were not built on.")
     ax.yaxis.set_major_formatter(FuncFormatter(lambda v, _: f"\\${v:,.0f}"))
     ax.yaxis.set_minor_formatter(FuncFormatter(lambda v, _: ""))
     ax.text(CUT, ax.get_ylim()[1], " hidden", color=SHADE, fontsize=11, va="top", ha="left", fontweight="bold")

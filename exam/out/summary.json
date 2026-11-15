@@ -137,6 +137,60 @@
     "is_sharpe": 0.53,
     "of": 100
    },
+   "basket": {
+    "n": 100,
+    "before": {
+     "net_return_pct": 424.88,
+     "cagr_pct": 34.56,
+     "sharpe": 1.0,
+     "max_drawdown_pct": -33.84,
+     "buy_hold_pct": 1621.54
+    },
+    "hidden": {
+     "net_return_pct": 26.79,
+     "cagr_pct": 26.8,
+     "sharpe": 1.04,
+     "max_drawdown_pct": -18.51,
+     "buy_hold_pct": -29.44
+    },
+    "avg_position_hidden": -0.06,
+    "median_pair_corr_hidden": 0.61,
+    "fees": {
+     "0": 33.56,
+     "1": 26.79,
+     "2": 20.36,
+     "3": 14.26
+    },
+    "tweaks": [
+     {
+      "mult": 0.8,
+      "hid_return_pct": 15.87,
+      "hid_sharpe": 0.71,
+      "kept_original": 0
+     },
+     {
+      "mult": 1.2,
+      "hid_return_pct": 23.69,
+      "hid_sharpe": 0.95,
+      "kept_original": 0
+     }
+    ],
+    "worst_case": {
+     "weeks": 53,
+     "pct_below_zero": 16.6,
+     "median_max_dd_pct": -14.64,
+     "p5_max_dd_pct": -27.63
+    },
+    "luck_pct": 85.3,
+    "twin_median_return_pct": -13.47,
+    "verdicts": {
+     "test1": true,
+     "test2": true,
+     "test3": true,
+     "test4": true,
+     "test5": false
+    }
+   },
    "verdicts": {
     "test1": true,
     "test2": false,
@@ -317,11 +371,6 @@
      "median_hid_sharpe": 0.78
     }
    ]
-  },
-  "opus": {
-   "label": "Opus",
-   "source": "opus/strategies/ is empty and no submission exists on any branch of the repository",
-   "submitted": false
   }
  },
  "proof": [
@@ -366,12 +415,12 @@
  },
  "cheat_checks": [
   {
-   "check": "fable/backtest.py and opus/backtest.py are byte-identical",
+   "check": "fable/backtest.py is byte-identical to the untouched reference copy in opus/",
    "verdict": "CLEAN",
    "detail": "identical"
   },
   {
-   "check": "in-sample CSVs are byte-identical (12,240 candles, last 2025-10-31 20:00)",
+   "check": "in-sample CSV is byte-identical to the reference copy (12,240 candles, last 2025-10-31 20:00)",
    "verdict": "CLEAN",
    "detail": "identical; 12,240 candles; last candle 2025-10-31 20:00:00+00:00"
   },
@@ -387,16 +436,6 @@
   },
   {
    "check": "Fable: session logs show no peeking (~/.claude/projects/-home-user-Trading-fable)",
-   "verdict": "PROBLEM",
-   "detail": "log folder does not exist on this machine - the session cannot be verified here"
-  },
-  {
-   "check": "Opus: no strategy mentions \"hidden\", opens files or uses the network",
-   "verdict": "PROBLEM",
-   "detail": "no strategy files submitted - nothing to check"
-  },
-  {
-   "check": "Opus: session logs show no peeking (~/.claude/projects/-home-user-Trading-opus)",
    "verdict": "PROBLEM",
    "detail": "log folder does not exist on this machine - the session cannot be verified here"
   }

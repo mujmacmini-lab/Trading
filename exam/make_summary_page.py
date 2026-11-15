@@ -15,7 +15,7 @@ sys.path.insert(0, HERE)
 
 import pandas as pd
 
-from report import TESTS
+from report import TESTS, final_verdict
 
 S = json.load(open(os.path.join(OUT, "summary.json")))
 E = html.escape
@@ -139,6 +139,24 @@ def build():
             f"head-to-head winner. {done[0]['label']}'s champion made money in a year when bitcoin lost {abs(t1['buy_hold_pct']):.0f}%, "
             f"but it passed only {n_pass} of the 5 tests.") if missing else "Both AIs handed in 100 strategies."
 
+    bk = f["basket"]
+    label, why = final_verdict(f)
+    lead = (f"Fable built {t1['scored']} bitcoin trading strategies on prices up to October 2025. Here they are run, untouched, on the "
+            f"following year. In short: {why}.")
+    rows = "".join(
+        f'<tr><th scope="row">{title[3:]}<small>It {rule}.</small></th><td>{pill(f["verdicts"][key])}</td><td>{pill(bk["verdicts"][key])}</td></tr>'
+        for key, title, rule in TESTS)
+    board = ('<div class="scroll"><table class="board"><thead><tr><th scope="col">Test</th>'
+             f'<th scope="col"><i class="sw fable"></i>Champion {champ}</th><th scope="col"><i class="sw basket"></i>All {bk["n"]} as one basket</th></tr></thead>'
+             f'<tbody>{rows}<tr class="total"><th scope="row">Tests passed</th><td><strong>{n_pass} of 5</strong></td>'
+             f'<td><strong>{sum(bk["verdicts"].values())} of 5</strong></td></tr></tbody></table></div>')
+    bk_fees = [(name, bk["fees"][k]) for k, name in (("0", "No fees"), ("1", "Normal fees"), ("2", "Double fees"), ("3", "Triple fees"))]
+    bk_tweaks = [(f"All settings <span>\u00d7{tw['mult']}</span>", tw["hid_return_pct"]) for tw in bk["tweaks"]]
+    meters = "".join(
+        f'<div class="hrow"><span class="hl">{name}</span><div class="track" tabindex="0" data-tip="{name}|beat {v:.1f}% of its randomly timed twins">'
+        f'<i class="ref" style="left:95%"></i><i class="hbar{cls}" style="left:0;width:{v:.1f}%"></i></div><span class="hv">{v:.0f}%</span></div>'
+        for name, v, cls in ((f"Basket of {bk['n']}", bk["luck_pct"], " basket"), (f"Champion {champ}", t5["champion_pct"], "")))
+
     return f"""<meta name="claude:viewport-fit-sides" content="cover">
 <title>Hidden-Year Exam</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap">
@@ -172,6 +190,11 @@ strong {{ font-weight: 600; }}
 .stat .v {{ font: 700 clamp(1.7rem, 4vw, 2.4rem)/1.05 var(--display); font-variant-numeric: tabular-nums; }}
 .stat .k {{ font-size: .86rem; color: var(--muted); line-height: 1.4; }}
 .sw {{ display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 7px; }}
+.sw.basket {{ background: var(--text); }}
+.result {{ display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; font: 700 clamp(1.3rem, 3.6vw, 1.9rem)/1.2 var(--display); letter-spacing: .01em; }}
+.result .eyebrow {{ font-family: var(--body); font-weight: 500; }}
+.hbar.basket {{ background: var(--text); }}
+ol.steps {{ margin: 0; padding-left: 1.3em; display: flex; flex-direction: column; gap: 8px; max-width: 72ch; }}
 .sw.fable {{ background: var(--fable); }} .sw.opus {{ background: var(--opus); }} .sw.btc {{ background: var(--btc); }}
 .scroll {{ overflow-x: auto; }}
 table {{ border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; }}
@@ -267,12 +290,13 @@ code {{ font: .88em ui-monospace, SFMono-Regular, Menlo, monospace; color: var(-
   <section>
     <p class="eyebrow">BTCUSDT perpetual &middot; 4-hour candles &middot; hidden year {S['hidden_from'][:10]} to {S['hidden_to'][:10]}</p>
     <h1>Hidden-Year Exam</h1>
+    <p class="result"><span class="eyebrow">Result</span>{label.capitalize()}</p>
     <p class="lead">{lead}</p>
     <div class="stats">
-      <div class="stat"><span class="v">{money(t1['champ_hid_return_pct'])}</span><span class="k"><i class="sw fable"></i>Fable's champion {champ}, from $10,000 ({pct(t1['champ_hid_return_pct'])})</span></div>
+      <div class="stat"><span class="v">{money(t1['champ_hid_return_pct'])}</span><span class="k"><i class="sw fable"></i>The champion Fable named in advance, {champ}, from $10,000 ({pct(t1['champ_hid_return_pct'])})</span></div>
       <div class="stat"><span class="v">{money(t1['buy_hold_pct'])}</span><span class="k"><i class="sw btc"></i>Just holding bitcoin, from $10,000 ({pct(t1['buy_hold_pct'])})</span></div>
-      <div class="stat"><span class="v">{t1['profitable']} / {t1['scored']}</span><span class="k">Fable strategies that made money in the hidden year</span></div>
-      <div class="stat"><span class="v">{t5['passed']} / {t5['of']}</span><span class="k">Fable strategies that beat 95% of random look-alikes</span></div>
+      <div class="stat"><span class="v">{money(bk['hidden']['net_return_pct'])}</span><span class="k"><i class="sw basket"></i>All {bk['n']} strategies as one basket, from $10,000 ({pct(bk['hidden']['net_return_pct'])})</span></div>
+      <div class="stat"><span class="v">{bk['luck_pct']:.0f}%</span><span class="k">Random look-alikes the basket beat. 95% is needed to rule out luck</span></div>
     </div>
   </section>
 </header>
@@ -280,13 +304,13 @@ code {{ font: .88em ui-monospace, SFMono-Regular, Menlo, monospace; color: var(-
 <section>
   <h2>Scoreboard</h2>
   {board}
-  <p class="muted">The pass rules were fixed before any strategy was scored. {"Opus has no column of results because its folder is empty: no strategies were built in any session or branch of this repository." if missing else ""}</p>
+  <p class="muted">The champion's pass lines were fixed before any strategy was scored. The basket column asks the same five questions of all {bk['n']} strategies held together; those versions were added after the champion's results were known.</p>
 </section>
 
 <section>
   <h2>All 100 strategies in the hidden year</h2>
-  <figure><img src="spaghetti_fable.png" alt="Equity of each of Fable's 100 strategies over the hidden year from $10,000, with the champion highlighted and bitcoin buy and hold as a dashed grey line that ends near $7,056.">
-  <figcaption>Each thin line is one strategy starting with $10,000. Thick line: the champion. Dashed grey: holding bitcoin.</figcaption></figure>
+  <figure><img src="spaghetti_fable.png" alt="Equity of each of Fable's 100 strategies over the hidden year from $10,000, with the champion in amber, the equal-weight basket in white and bitcoin buy and hold as a dashed grey line that ends near $7,056.">
+  <figcaption>Each thin line is one strategy starting with $10,000. Thick amber: the champion. White: all 100 as one basket. Dashed grey: holding bitcoin.</figcaption></figure>
   <p>{t1['profitable']} of {t1['scored']} strategies ended above $10,000 and {t1['beat_buy_hold']} beat holding bitcoin. Most of these rules can bet on falling prices, and the hidden year was a falling market, so this result says less than it seems to. The luck check further down is the fairer test.</p>
 </section>
 
@@ -337,6 +361,58 @@ code {{ font: .88em ui-monospace, SFMono-Regular, Menlo, monospace; color: var(-
 </section>
 
 <section>
+  <h2>All {bk['n']} strategies as one basket</h2>
+  <p>Hold every strategy at once with equal money in each. In practice that is one position equal to the average of the {bk['n']} signals. No picking is involved, so hindsight cannot flatter it.</p>
+  <div class="duo">
+    <div><span class="eyebrow">Before the hidden year</span><span class="v">Sharpe {bk['before']['sharpe']:.2f}</span>
+      <small>{pct(bk['before']['cagr_pct'], 1)} a year, worst dip {pct(bk['before']['max_drawdown_pct'], 1)}.</small></div>
+    <div><span class="eyebrow">Hidden year</span><span class="v">Sharpe {bk['hidden']['sharpe']:.2f}</span>
+      <small>{pct(bk['hidden']['net_return_pct'], 1)}, worst dip {pct(bk['hidden']['max_drawdown_pct'], 1)}. The group behaved on new data the way it did on old data.</small></div>
+  </div>
+  <div class="two">
+    <div class="block">
+      <div class="verdict"><h3>Tweak the settings</h3>{pill(bk['verdicts']['test2'])}</div>
+      <p class="muted">Every numeric setting of every strategy moved 20% down, then 20% up, all at once.</p>
+      {hbars(bk_tweaks, -10, 40, ref=bk['hidden']['net_return_pct'])}
+      <div class="legend"><span><i class="lz"></i>basket as submitted ({pct(bk['hidden']['net_return_pct'], 1)})</span></div>
+    </div>
+    <div class="block">
+      <div class="verdict"><h3>Higher fees</h3>{pill(bk['verdicts']['test3'])}</div>
+      <p class="muted">Trading costs removed, doubled and tripled.</p>
+      {hbars(bk_fees, -10, 40)}
+    </div>
+    <div class="block">
+      <div class="verdict"><h3>Worst case</h3>{pill(bk['verdicts']['test4'])}</div>
+      <p class="muted">The basket's hidden year cut into {bk['worst_case']['weeks']} weeks, reshuffled 1,000 times.</p>
+      <div class="scroll"><table><tbody>
+        <tr><th scope="row">Reshuffles that lost money</th><td>{bk['worst_case']['pct_below_zero']:.1f}%</td></tr>
+        <tr><th scope="row">Typical worst dip</th><td>{pct(bk['worst_case']['median_max_dd_pct'], 1)}</td></tr>
+        <tr><th scope="row">Worst dip in the unluckiest 5%</th><td>{pct(bk['worst_case']['p5_max_dd_pct'], 1)}</td></tr>
+      </tbody></table></div>
+    </div>
+    <div class="block">
+      <div class="verdict"><h3>Luck check</h3>{pill(bk['verdicts']['test5'])}</div>
+      <p class="muted">The basket's own positions slid to 1,000 random other moments of the year. Same size, same rhythm, different timing.</p>
+      <div class="hbars">{meters}</div>
+      <div class="legend"><span><i class="lz"></i>95% needed to rule out luck</span></div>
+    </div>
+  </div>
+  <p>The basket beat {bk['luck_pct']:.0f}% of its randomly timed twins, which typically made {pct(bk['twin_median_return_pct'], 1)}. That points to real timing value, but it is short of the 95% line. The {bk['n']} strategies also move together (typical correlation {bk['median_pair_corr_hidden']:.2f}), so this is one bet, not {bk['n']}.</p>
+</section>
+
+<section>
+  <h2>What to push forward</h2>
+  <p><strong>The basket of all {bk['n']}, not a single strategy.</strong> {b['id']} made {pct(b['hid_return_pct'], 1)} but ranked {b['is_rank']} of {b['of']} beforehand, so choosing it now is picking the lottery winner after the draw. The champion {champ} was the honest advance pick and failed three tests.</p>
+  <ol class="steps">
+    <li>Freeze the {bk['n']} files as they are. No re-tuning on the hidden year.</li>
+    <li>Trade the basket on paper for 3 to 6 months on live 4-hour candles. Only data from today on is truly unseen by the model.</li>
+    <li>Add funding costs. The backtester charges fees and slippage but not the funding payments of perpetual futures.</li>
+    <li>Fix the stop rule now, for example: drop it if the forward Sharpe is below 0.5 or the dip passes 25%.</li>
+    <li>Consider small real money only after that.</li>
+  </ol>
+</section>
+
+<section>
   <h2>Best ten in the hidden year</h2>
   <div class="scroll"><table><thead><tr><th>#</th><th>Strategy</th><th>Rank before</th><th>Return</th><th>Sharpe</th><th>Worst dip</th><th>Beat twins</th></tr></thead><tbody>{top}</tbody></table></div>
   <h3>By family</h3>
@@ -346,8 +422,8 @@ code {{ font: .88em ui-monospace, SFMono-Regular, Menlo, monospace; color: var(-
 
 <section>
   <h2>Since April 2020</h2>
-  <figure><img src="full_history.png" alt="Fable's champion and bitcoin buy and hold from April 2020 on a log scale, both starting at $10,000, with the hidden year shaded purple.">
-  <figcaption>$10,000 start, log scale. The shaded band is the hidden year.</figcaption></figure>
+  <figure><img src="full_history.png" alt="Fable's champion, the basket of all 100 strategies and bitcoin buy and hold from April 2020 on a log scale, all starting at $10,000, with the hidden year shaded purple.">
+  <figcaption>$10,000 start, log scale. Amber: the champion. White: the basket. The shaded band is the hidden year.</figcaption></figure>
 </section>
 
 <section>
