@@ -1,0 +1,1 @@
+{"permissions": {"allow": ["Bash(python backtest.py:*)", "Bash(python:*)", "Bash(ls:*)", "Read(./**)", "Edit(./**)", "Write(./**)"], "deny": ["Read(../**)", "Edit(../**)", "Write(../**)", "WebFetch", "WebSearch"]}}
